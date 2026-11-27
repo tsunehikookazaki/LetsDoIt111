@@ -11,8 +11,8 @@ import androidx.core.app.NotificationCompat
 class MorningAlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        // 1. 明日の同時刻のアラームを再設定
-        AlarmScheduler.scheduleMorningAlarm(context)
+        // 1. 全てのアラームを再設定
+        AlarmScheduler.scheduleAllAlarms(context)
 
         // 2. MainActivity を起動するための Intent を準備
         val launchIntent = Intent(context, MainActivity::class.java).apply {
