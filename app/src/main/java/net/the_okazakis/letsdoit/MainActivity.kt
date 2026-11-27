@@ -1,17 +1,18 @@
 package net.the_okazakis.letsdoit
 
-import android.graphics.Color
+import android.content.SharedPreferences
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.google.android.material.switchmaterial.SwitchMaterial
 import java.text.SimpleDateFormat
 import java.util.*
-import com.google.android.material.switchmaterial.SwitchMaterial
-import android.content.SharedPreferences
-import android.os.Handler
-import android.os.Looper
 
 class MainActivity : AppCompatActivity() {
 
@@ -35,6 +36,20 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // ロック画面でも画面をオンにして表示・音声再生できるようにする設定
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            )
+        }
+
         setContentView(R.layout.activity_main)
 
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
@@ -69,7 +84,9 @@ class MainActivity : AppCompatActivity() {
         speechManager = SpeechManager(this)
 
         updateDisplay()
-        scheduleMorningCheck()
+        
+        // 毎朝8時の起動・音声案内アラームをスケジュール
+        AlarmScheduler.scheduleMorningAlarm(this)
 
         btnStatusCheck.setOnClickListener {
             announceAllStatus()
@@ -92,30 +109,6 @@ class MainActivity : AppCompatActivity() {
                 speechManager.stop() // OFFにした時に今喋っているのを止める
             }
         }
-    }
-
-    private fun scheduleMorningCheck() {
-        val workRequest = androidx.work.PeriodicWorkRequestBuilder<MorningCheckWorker>(24, java.util.concurrent.TimeUnit.HOURS)
-            .setInitialDelay(calculateInitialDelay(), java.util.concurrent.TimeUnit.MILLISECONDS)
-            .build()
-
-        androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "MorningCheck",
-            androidx.work.ExistingPeriodicWorkPolicy.KEEP,
-            workRequest
-        )
-    }
-
-    private fun calculateInitialDelay(): Long {
-        val calendar = Calendar.getInstance()
-        val now = calendar.timeInMillis
-        calendar.set(Calendar.HOUR_OF_DAY, 8)   // 8時
-        calendar.set(Calendar.MINUTE, 0)        // 0分
-        calendar.set(Calendar.SECOND, 0)        // 0秒
-        if (calendar.timeInMillis <= now) {
-            calendar.add(Calendar.DAY_OF_YEAR, 1)
-        }
-        return calendar.timeInMillis - now
     }
 
     override fun onResume() {
