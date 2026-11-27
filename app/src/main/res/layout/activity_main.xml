@@ -201,9 +201,21 @@
                 android:id="@+id/btnStatusCheck"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="15dp"
+                android:layout_marginBottom="12dp"
                 android:backgroundTint="#4299E1"
                 android:text="昨日と今日の状況チェック"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="12dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTimeSettings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FF9800"
+                android:text="起動時間の設定 (現在 08:00)"
+                android:textColor="#FFFFFF"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 app:cornerRadius="12dp" />

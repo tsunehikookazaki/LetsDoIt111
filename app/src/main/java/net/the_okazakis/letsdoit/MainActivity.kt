@@ -1,5 +1,6 @@
 package net.the_okazakis.letsdoit
 
+import android.app.TimePickerDialog
 import android.content.SharedPreferences
 import android.os.Build
 import android.os.Bundle
@@ -8,6 +9,7 @@ import android.os.Looper
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -28,6 +30,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvMachineToday: TextView
 
     private lateinit var btnStatusCheck: Button
+    private lateinit var btnTimeSettings: Button
     private lateinit var switchVoice: SwitchMaterial
     private lateinit var prefs: SharedPreferences
 
@@ -68,6 +71,13 @@ class MainActivity : AppCompatActivity() {
         tvMachineToday = findViewById(R.id.tvMachineToday)
 
         btnStatusCheck = findViewById(R.id.btnStatusCheck)
+        btnTimeSettings = findViewById(R.id.btnTimeSettings)
+
+        updateTimeButtonText()
+
+        btnTimeSettings.setOnClickListener {
+            showTimePickerDialog()
+        }
 
         val btnSettings = findViewById<Button>(R.id.btnSyncSettings)
         btnSettings.visibility = android.view.View.VISIBLE
@@ -78,14 +88,14 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnRefresh).setOnClickListener {
             updateDisplay()
-            android.widget.Toast.makeText(this, "ローカルから状況を更新しました", android.widget.Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "ローカルから状況を更新しました", Toast.LENGTH_SHORT).show()
         }
 
         speechManager = SpeechManager(this)
 
         updateDisplay()
         
-        // 毎朝8時の起動・音声案内アラームをスケジュール
+        // 設定された時刻に起動するアラームをスケジュール
         AlarmScheduler.scheduleMorningAlarm(this)
 
         btnStatusCheck.setOnClickListener {
@@ -103,12 +113,38 @@ class MainActivity : AppCompatActivity() {
         switchVoice.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("voice_enabled", isChecked).apply()
             if (isChecked) {
-                android.widget.Toast.makeText(this, "音声案内: ON", android.widget.Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "音声案内: ON", Toast.LENGTH_SHORT).show()
             } else {
-                android.widget.Toast.makeText(this, "音声案内: OFF", android.widget.Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "音声案内: OFF", Toast.LENGTH_SHORT).show()
                 speechManager.stop() // OFFにした時に今喋っているのを止める
             }
         }
+    }
+
+    private fun updateTimeButtonText() {
+        val hour = AlarmScheduler.getAlarmHour(this)
+        val minute = AlarmScheduler.getAlarmMinute(this)
+        val timeStr = String.format(Locale.JAPANESE, "%02d:%02d", hour, minute)
+        btnTimeSettings.text = "起動時間の設定 (現在 $timeStr)"
+    }
+
+    private fun showTimePickerDialog() {
+        val currentHour = AlarmScheduler.getAlarmHour(this)
+        val currentMinute = AlarmScheduler.getAlarmMinute(this)
+
+        val timePickerDialog = TimePickerDialog(
+            this,
+            { _, hourOfDay, minute ->
+                AlarmScheduler.saveAlarmTime(this, hourOfDay, minute)
+                updateTimeButtonText()
+                val timeStr = String.format(Locale.JAPANESE, "%02d:%02d", hourOfDay, minute)
+                Toast.makeText(this, "毎日の起動時間を $timeStr に設定しました", Toast.LENGTH_SHORT).show()
+            },
+            currentHour,
+            currentMinute,
+            true
+        )
+        timePickerDialog.show()
     }
 
     override fun onResume() {
@@ -151,7 +187,7 @@ class MainActivity : AppCompatActivity() {
             val name = etNickname.text.toString().trim()
             if (name.isNotEmpty()) {
                 SharedRecordManager.setNickname(this, name)
-                android.widget.Toast.makeText(this, "設定を保存しました", android.widget.Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "設定を保存しました", Toast.LENGTH_SHORT).show()
                 updateDisplay()
             }
         }
